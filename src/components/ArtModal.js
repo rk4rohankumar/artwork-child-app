@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 
-const imageUrl = (id) =>
-  `https://www.artic.edu/iiif/2/${id}/full/843,/0/default.jpg`;
+const BASE = "https://collectionapi.metmuseum.org/public/collection/v1";
 
 const ArtModal = ({ artId, onClose }) => {
   const [detail, setDetail] = useState(null);
@@ -13,21 +12,19 @@ const ArtModal = ({ artId, onClose }) => {
 
   useEffect(() => {
     let cancelled = false;
-    const fetchDetail = async () => {
+    const run = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(
-          `https://api.artic.edu/api/v1/artworks/${artId}`
-        );
-        if (!cancelled) setDetail(res.data.data);
-      } catch (err) {
+        const res = await axios.get(`${BASE}/objects/${artId}`);
+        if (!cancelled) setDetail(res.data);
+      } catch {
         if (!cancelled) setError("Failed to load artwork details.");
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
-    fetchDetail();
+    run();
     return () => {
       cancelled = true;
     };
@@ -47,7 +44,18 @@ const ArtModal = ({ artId, onClose }) => {
     };
   }, [onClose]);
 
-  const hasImage = detail?.image_id && !imgError;
+  const imageUrl = detail?.primaryImage || detail?.primaryImageSmall || "";
+  const hasImage = Boolean(imageUrl) && !imgError;
+
+  const fields = [
+    ["Artist", detail?.artistDisplayName],
+    ["Date", detail?.objectDate],
+    ["Medium", detail?.medium],
+    ["Dimensions", detail?.dimensions],
+    ["Department", detail?.department],
+    ["Culture", detail?.culture],
+    ["Credit", detail?.creditLine],
+  ].filter(([, v]) => v);
 
   return (
     <div
@@ -109,7 +117,7 @@ const ArtModal = ({ artId, onClose }) => {
             <div className="space-y-4">
               {hasImage ? (
                 <img
-                  src={imageUrl(detail.image_id)}
+                  src={imageUrl}
                   alt={detail.title || "Artwork"}
                   loading="lazy"
                   decoding="async"
@@ -117,50 +125,30 @@ const ArtModal = ({ artId, onClose }) => {
                   className="w-full max-h-96 object-contain bg-gray-50 rounded"
                 />
               ) : (
-                <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 rounded">
-                  <span className="text-gray-500 text-sm">No image available</span>
+                <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 rounded">
+                  <span className="text-stone-600 text-sm">
+                    No image available
+                  </span>
                 </div>
               )}
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                {detail.artist_title && (
-                  <>
-                    <dt className="font-semibold text-gray-700">Artist</dt>
-                    <dd className="text-gray-900">{detail.artist_title}</dd>
-                  </>
-                )}
-                {detail.date_display && (
-                  <>
-                    <dt className="font-semibold text-gray-700">Date</dt>
-                    <dd className="text-gray-900">{detail.date_display}</dd>
-                  </>
-                )}
-                {detail.medium_display && (
-                  <>
-                    <dt className="font-semibold text-gray-700">Medium</dt>
-                    <dd className="text-gray-900">{detail.medium_display}</dd>
-                  </>
-                )}
-                {detail.dimensions && (
-                  <>
-                    <dt className="font-semibold text-gray-700">Dimensions</dt>
-                    <dd className="text-gray-900">{detail.dimensions}</dd>
-                  </>
-                )}
-                {detail.credit_line && (
-                  <>
-                    <dt className="font-semibold text-gray-700">Credit</dt>
-                    <dd className="text-gray-900">{detail.credit_line}</dd>
-                  </>
-                )}
+                {fields.map(([label, value]) => (
+                  <div key={label} className="contents">
+                    <dt className="font-semibold text-gray-700">{label}</dt>
+                    <dd className="text-gray-900">{value}</dd>
+                  </div>
+                ))}
               </dl>
-              <a
-                href={`https://www.artic.edu/artworks/${detail.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block text-blue-600 hover:underline text-sm font-medium"
-              >
-                View on artic.edu
-              </a>
+              {detail.objectURL && (
+                <a
+                  href={detail.objectURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-blue-600 hover:underline text-sm font-medium"
+                >
+                  View on metmuseum.org
+                </a>
+              )}
             </div>
           )}
         </div>

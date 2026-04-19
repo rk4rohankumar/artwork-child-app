@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import "tailwindcss/tailwind.css";
 import ArtCard from "./components/ArtCard";
@@ -9,39 +9,77 @@ import EmptyState from "./components/EmptyState";
 import Pagination from "./components/Pagination";
 import useDebouncedValue from "./hooks/useDebouncedValue";
 
-const LIMIT = 20;
-const BASE = "https://api.artic.edu/api/v1/artworks";
-const FIELDS = "id,title,image_id,artist_title";
+const PAGE_SIZE = 20;
+const OVERFETCH = 30;
+const BASE = "https://collectionapi.metmuseum.org/public/collection/v1";
+const DEFAULT_QUERY = "painting";
+
+const normalize = (obj) => ({
+  id: obj.objectID,
+  title: obj.title || "Untitled",
+  artist: obj.artistDisplayName || "Unknown Artist",
+  imageUrl: obj.primaryImageSmall || obj.primaryImage || "",
+  objectURL: obj.objectURL,
+});
 
 const ArtworkPage = () => {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query.trim(), 300);
   const [page, setPage] = useState(1);
+  const [allIds, setAllIds] = useState([]);
   const [artworks, setArtworks] = useState([]);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [reloadTick, setReloadTick] = useState(0);
 
+  const idsCacheKey = useRef("");
+
   useEffect(() => {
     setPage(1);
   }, [debouncedQuery]);
 
-  const fetchArtworks = useCallback(
+  const fetchIds = useCallback(
+    async (signal) => {
+      const q = debouncedQuery || DEFAULT_QUERY;
+      if (idsCacheKey.current === q && allIds.length) return allIds;
+      const res = await axios.get(`${BASE}/search`, {
+        params: { q, hasImages: true },
+        signal,
+      });
+      const ids = res.data?.objectIDs || [];
+      idsCacheKey.current = q;
+      setAllIds(ids);
+      return ids;
+    },
+    [debouncedQuery, allIds]
+  );
+
+  const fetchPage = useCallback(
     async (signal) => {
       setLoading(true);
       setError(null);
       try {
-        const url = debouncedQuery
-          ? `${BASE}/search?q=${encodeURIComponent(
-              debouncedQuery
-            )}&page=${page}&limit=${LIMIT}&fields=${FIELDS}`
-          : `${BASE}?page=${page}&limit=${LIMIT}&fields=${FIELDS}`;
-        const res = await axios.get(url, { signal });
-        setArtworks(res.data.data || []);
-        const pag = res.data.pagination || {};
-        setTotalPages(pag.total_pages || 1);
+        const ids = await fetchIds(signal);
+        if (!ids.length) {
+          setArtworks([]);
+          return;
+        }
+        const start = (page - 1) * PAGE_SIZE;
+        const slice = ids.slice(start, start + OVERFETCH);
+        const results = await Promise.all(
+          slice.map((id) =>
+            axios
+              .get(`${BASE}/objects/${id}`, { signal })
+              .then((r) => r.data)
+              .catch(() => null)
+          )
+        );
+        const normalized = results
+          .filter((o) => o && (o.primaryImageSmall || o.primaryImage))
+          .slice(0, PAGE_SIZE)
+          .map(normalize);
+        setArtworks(normalized);
       } catch (err) {
         if (axios.isCancel?.(err) || err.name === "CanceledError") return;
         setError("Failed to fetch artwork data.");
@@ -49,30 +87,34 @@ const ArtworkPage = () => {
         setLoading(false);
       }
     },
-    [debouncedQuery, page]
+    [fetchIds, page]
   );
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchArtworks(controller.signal);
+    fetchPage(controller.signal);
     return () => controller.abort();
-  }, [fetchArtworks, reloadTick]);
+  }, [fetchPage, reloadTick]);
 
   const handleRetry = () => setReloadTick((n) => n + 1);
   const handlePrev = () => setPage((p) => Math.max(1, p - 1));
+  const totalPages = Math.max(1, Math.ceil(allIds.length / PAGE_SIZE));
   const handleNext = () => setPage((p) => Math.min(totalPages, p + 1));
 
   const resultsLabel = loading
     ? "Loading artworks..."
     : `Showing ${artworks.length} artwork${artworks.length === 1 ? "" : "s"}${
         debouncedQuery ? ` for "${debouncedQuery}"` : ""
-      }`;
+      } — ${allIds.length} total with images`;
 
   return (
     <main className="max-w-6xl mx-auto p-4">
-      <h1 className="text-3xl font-bold text-center mb-6">
+      <h1 className="text-3xl font-bold text-center mb-2">
         Artworks Collection
       </h1>
+      <p className="text-center text-xs text-gray-500 mb-6">
+        Powered by The Metropolitan Museum of Art Open Access API.
+      </p>
 
       <form
         role="search"
