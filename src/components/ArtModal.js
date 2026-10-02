@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import ImagePlaceholder from "./ImagePlaceholder";
 
 const BASE = "https://collectionapi.metmuseum.org/public/collection/v1";
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const ArtModal = ({ artId, onClose }) => {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imgError, setImgError] = useState(false);
+  const dialogRef = useRef(null);
   const closeBtnRef = useRef(null);
 
   useEffect(() => {
@@ -30,9 +34,34 @@ const ArtModal = ({ artId, onClose }) => {
     };
   }, [artId]);
 
+  // Escape closes, Tab is trapped inside the dialog, and focus returns to
+  // whatever opened the modal (the card button) once it unmounts.
   useEffect(() => {
+    const opener = document.activeElement;
     const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll(FOCUSABLE)
+      ).filter((el) => el.offsetParent !== null);
+      if (!focusable.length) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !dialogRef.current.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
@@ -41,11 +70,14 @@ const ArtModal = ({ artId, onClose }) => {
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
+      if (opener && typeof opener.focus === "function") opener.focus();
     };
   }, [onClose]);
 
   const imageUrl = detail?.primaryImage || detail?.primaryImageSmall || "";
   const hasImage = Boolean(imageUrl) && !imgError;
+  const title = detail?.title || "Untitled";
+  const artist = detail?.artistDisplayName || "Unknown Artist";
 
   const fields = [
     ["Artist", detail?.artistDisplayName],
@@ -64,16 +96,17 @@ const ArtModal = ({ artId, onClose }) => {
       role="presentation"
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="art-modal-title"
-        className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between p-4 border-b border-gray-200 sticky top-0 bg-white">
+        <div className="sticky top-0 flex items-start justify-between border-b border-gray-200 bg-white p-4">
           <h2
             id="art-modal-title"
-            className="text-xl font-bold text-gray-900 pr-4"
+            className="pr-4 text-xl font-bold text-gray-900"
           >
             {detail?.title || "Artwork"}
           </h2>
@@ -82,7 +115,7 @@ const ArtModal = ({ artId, onClose }) => {
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            className="rounded p-1 text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -95,6 +128,7 @@ const ArtModal = ({ artId, onClose }) => {
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
+              focusable="false"
             >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -104,34 +138,32 @@ const ArtModal = ({ artId, onClose }) => {
 
         <div className="p-4">
           {loading && (
-            <p className="text-gray-600 py-8 text-center" aria-live="polite">
+            <p className="py-8 text-center text-gray-600" aria-live="polite">
               Loading details...
             </p>
           )}
           {error && (
-            <p className="text-red-600 py-8 text-center" role="alert">
+            <p className="py-8 text-center text-red-600" role="alert">
               {error}
             </p>
           )}
           {detail && (
             <div className="space-y-4">
-              {hasImage ? (
-                <img
-                  src={imageUrl}
-                  alt={detail.title || "Artwork"}
-                  loading="lazy"
-                  decoding="async"
-                  onError={() => setImgError(true)}
-                  className="w-full max-h-96 object-contain bg-gray-50 rounded"
-                />
-              ) : (
-                <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 rounded">
-                  <span className="text-stone-600 text-sm">
-                    No image available
-                  </span>
-                </div>
-              )}
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <div className="h-64 w-full overflow-hidden rounded bg-gray-50 sm:h-96">
+                {hasImage ? (
+                  <img
+                    src={imageUrl}
+                    alt={`${title} by ${artist}`}
+                    loading="lazy"
+                    decoding="async"
+                    onError={() => setImgError(true)}
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <ImagePlaceholder label={`No image available for ${title}`} />
+                )}
+              </div>
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                 {fields.map(([label, value]) => (
                   <div key={label} className="contents">
                     <dt className="font-semibold text-gray-700">{label}</dt>
@@ -144,7 +176,7 @@ const ArtModal = ({ artId, onClose }) => {
                   href={detail.objectURL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block text-blue-600 hover:underline text-sm font-medium"
+                  className="inline-block text-sm font-medium text-blue-600 hover:underline"
                 >
                   View on metmuseum.org
                 </a>

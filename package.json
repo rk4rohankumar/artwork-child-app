@@ -2,6 +2,7 @@
   "name": "artwork",
   "version": "0.1.0",
   "private": true,
+  "description": "Artwork micro-frontend remote: browse and search The Metropolitan Museum of Art Open Access collection. Exposes ./ArtworkApp via webpack Module Federation.",
   "dependencies": {
     "@craco/craco": "^7.1.0",
     "autoprefixer": "^10.4.20",
