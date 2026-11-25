@@ -9,7 +9,7 @@ const ErrorState = ({ message = "Something went wrong.", onRetry }) => {
         <button
           type="button"
           onClick={onRetry}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="px-4 py-2 bg-[var(--mfe-accent,#047857)] text-white rounded hover:bg-[var(--mfe-accent-ink,#065f46)] focus:outline-none focus:ring-2 focus:ring-[color:var(--mfe-accent,#047857)] focus:ring-offset-2"
         >
           Retry
         </button>

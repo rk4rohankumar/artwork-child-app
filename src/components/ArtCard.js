@@ -9,8 +9,8 @@ const ArtCard = ({ art, onOpen, priority = false }) => {
   const alt = `${art.title} by ${art.artist}`;
 
   return (
-    <article className="group relative overflow-hidden rounded-lg bg-white shadow-md transition-transform duration-300 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <div className="aspect-[4/3] w-full bg-gray-100">
+    <article className="group relative overflow-hidden rounded-[var(--mfe-radius,12px)] bg-[var(--mfe-surface,#ffffff)] shadow-sm transition-transform duration-300 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      <div className="aspect-[4/3] w-full bg-[var(--mfe-sunken,#f8fafc)]">
         {hasImage ? (
           <img
             src={art.imageUrl}
@@ -26,7 +26,7 @@ const ArtCard = ({ art, onOpen, priority = false }) => {
         )}
       </div>
       <div className="p-4">
-        <h2 className="line-clamp-2 text-lg font-semibold text-gray-900">
+        <h2 className="line-clamp-2 text-lg font-semibold text-[color:var(--mfe-ink,#0f172a)]">
           <button
             type="button"
             onClick={() => onOpen(art)}
@@ -36,7 +36,7 @@ const ArtCard = ({ art, onOpen, priority = false }) => {
             <span className="sr-only">, view details</span>
           </button>
         </h2>
-        <p className="mt-1 text-sm text-gray-600">{art.artist}</p>
+        <p className="mt-1 text-sm text-[color:var(--mfe-muted,#475569)]">{art.artist}</p>
       </div>
     </article>
   );

@@ -100,10 +100,11 @@ const ArtworkPage = () => {
 
   return (
     <section className="max-w-6xl mx-auto p-4" aria-labelledby="artwork-heading">
-      <h1 id="artwork-heading" className="text-3xl font-bold text-center mb-2">
+      <p className="text-xs font-medium uppercase tracking-widest text-[color:var(--mfe-accent,#047857)]">Artwork remote</p>
+      <h1 id="artwork-heading" className="mt-1 mb-2 text-2xl font-semibold text-[color:var(--mfe-ink,#0f172a)]">
         Artworks Collection
       </h1>
-      <p className="text-center text-xs text-gray-500 mb-6">
+      <p className="text-xs text-[color:var(--mfe-muted,#475569)] mb-6">
         Powered by The Metropolitan Museum of Art Open Access API.
       </p>
 
@@ -121,11 +122,11 @@ const ArtworkPage = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search artworks, artists..."
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full max-w-md px-4 py-2 border border-[color:var(--mfe-border,#e2e8f0)] rounded-[var(--mfe-radius,12px)] focus:outline-none focus:ring-2 focus:ring-[color:var(--mfe-accent,#047857)]"
         />
       </form>
 
-      <p className="text-sm text-gray-600 text-center mb-4" aria-live="polite">
+      <p className="text-sm text-[color:var(--mfe-muted,#475569)] text-center mb-4" aria-live="polite">
         {resultsLabel}
       </p>
 

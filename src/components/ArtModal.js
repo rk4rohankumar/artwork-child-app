@@ -100,13 +100,13 @@ const ArtModal = ({ artId, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="art-modal-title"
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-xl"
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[var(--mfe-radius,12px)] bg-[var(--mfe-surface,#ffffff)] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 flex items-start justify-between border-b border-gray-200 bg-white p-4">
+        <div className="sticky top-0 flex items-start justify-between border-b border-[color:var(--mfe-border,#e2e8f0)] bg-[var(--mfe-surface,#ffffff)] p-4">
           <h2
             id="art-modal-title"
-            className="pr-4 text-xl font-bold text-gray-900"
+            className="pr-4 text-xl font-bold text-[color:var(--mfe-ink,#0f172a)]"
           >
             {detail?.title || "Artwork"}
           </h2>
@@ -115,7 +115,7 @@ const ArtModal = ({ artId, onClose }) => {
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded p-1 text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded p-1 text-[color:var(--mfe-muted,#475569)] hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[color:var(--mfe-accent,#047857)]"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -138,7 +138,7 @@ const ArtModal = ({ artId, onClose }) => {
 
         <div className="p-4">
           {loading && (
-            <p className="py-8 text-center text-gray-600" aria-live="polite">
+            <p className="py-8 text-center text-[color:var(--mfe-muted,#475569)]" aria-live="polite">
               Loading details...
             </p>
           )}
@@ -149,7 +149,7 @@ const ArtModal = ({ artId, onClose }) => {
           )}
           {detail && (
             <div className="space-y-4">
-              <div className="h-64 w-full overflow-hidden rounded bg-gray-50 sm:h-96">
+              <div className="h-64 w-full overflow-hidden rounded bg-[var(--mfe-sunken,#f8fafc)] sm:h-96">
                 {hasImage ? (
                   <img
                     src={imageUrl}
@@ -166,8 +166,8 @@ const ArtModal = ({ artId, onClose }) => {
               <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                 {fields.map(([label, value]) => (
                   <div key={label} className="contents">
-                    <dt className="font-semibold text-gray-700">{label}</dt>
-                    <dd className="text-gray-900">{value}</dd>
+                    <dt className="font-semibold text-[color:var(--mfe-muted,#475569)]">{label}</dt>
+                    <dd className="text-[color:var(--mfe-ink,#0f172a)]">{value}</dd>
                   </div>
                 ))}
               </dl>
@@ -176,7 +176,7 @@ const ArtModal = ({ artId, onClose }) => {
                   href={detail.objectURL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block text-sm font-medium text-blue-600 hover:underline"
+                  className="inline-block text-sm font-medium text-[color:var(--mfe-accent,#047857)] hover:underline"
                 >
                   View on metmuseum.org
                 </a>
